@@ -16,13 +16,32 @@
  */
 package org.apache.nifi.service;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.JdkSSLOptions;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.ProtocolOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.SocketOptions;
+
+// old imports
+//import com.datastax.driver.core.Cluster;
+//import com.datastax.driver.core.ConsistencyLevel;
+//import com.datastax.driver.core.JdkSSLOptions;
+//import com.datastax.driver.core.Metadata;
+//import com.datastax.driver.core.ProtocolOptions;
+//import com.datastax.driver.core.Session;
+//import com.datastax.driver.core.SocketOptions;
+
+// new imports
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.*; 
+
+// is the * import overkill here?   How do we even find the classes after api.core. ?
+// across the entire cassandra bundle are additional class paths that need to be resolved
+
+// unsure of import paths or acceptable 4.x usage for 
+//JdkSSLOptions
+//ConsistencyLevel
+//ProtocolOptions
+//SocketOptions
+
+
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,7 +131,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             .name("Consistency Level")
             .description("The strategy for how many replicas must respond before results are returned.")
             .required(true)
-            .allowableValues(ConsistencyLevel.values())
+            //.allowableValues(ConsistencyLevel.values())
             .defaultValue("ONE")
             .build();
 
@@ -120,7 +139,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             .name("Compression Type")
             .description("Enable compression at transport-level requests and responses")
             .required(false)
-            .allowableValues(ProtocolOptions.Compression.values())
+            //.allowableValues(ProtocolOptions.Compression.values())
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .defaultValue("NONE")
             .build();
@@ -144,8 +163,8 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         .build();
 
     private List<PropertyDescriptor> properties;
-    private Cluster cluster;
-    private Session cassandraSession;
+    private CqlSession cluster;
+    private CqlSession cassandraSession;
 
     @Override
     public void init(final ControllerServiceInitializationContext context) {
@@ -187,17 +206,20 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         }
     }
 
-    @Override
-    public Cluster getCluster() {
-        if (cluster != null) {
-            return cluster;
-        } else {
-            throw new ProcessException("Unable to get the Cassandra cluster detail.");
-        }
-    }
+    // comment this
+    // I am not sure if we still need to override and "cluster details"
+    // since this doesnt exist in [] i believe its not needed here
+    //@Override
+    // public CqlSession getCluster() {
+    //    if (cluster != null) {
+    //        return cluster;
+    //    } else {
+    //        throw new ProcessException("Unable to get the Cassandra cluster detail.");
+    //    }
+    //}
 
     @Override
-    public Session getCassandraSession() {
+    public CqlSession getCassandraSession() {
         if (cassandraSession != null) {
             return cassandraSession;
         } else {
@@ -248,15 +270,43 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
                 .map(PropertyValue::asInteger);
 
             // Create the cluster and connect to it
-            Cluster newCluster = createCluster(contactPoints, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional);
+            // moving build state out of function to get a basic working sample
+            // had issues with 
+            //     contact points
+            //     issue with "CqlSession.Builder builder"
+
+            // the create function exists in following locations:
+            //     nifi-cassandra-processors/src/main/java/org/apache/nifi/processors/cassandra/AbstractCassandraProcessor.java
+            //     nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/AbstractCassandraProcessorTest.java
+            //     nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/PutCassandraQLTest.java
+            //     nifi-cassandra-bundle/nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/PutCassandraRecordTest.java
+            //     nifi-cassandra-bundle/nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/QueryCassandraTest.java
+
+            // new final 4.x function will need exist in all locations
+                
+            //CqlSession newCluster = createCluster(contactPoints, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional);
             PropertyValue keyspaceProperty = context.getProperty(KEYSPACE).evaluateAttributeExpressions();
-            final Session newSession;
-            if (keyspaceProperty != null) {
-                newSession = newCluster.connect(keyspaceProperty.getValue());
-            } else {
-                newSession = newCluster.connect();
-            }
-            newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
+
+            CqlSession newCluster = CqlSession.builder()
+                .addContactPoint(new InetSocketAddress("127.0.0.1",9042)) // if i feed the
+                .withCredentials(username, password)
+                .withKeyspace(keyspaceProperty.getValue())
+                .build();
+
+            final CqlSession newSession;
+            // working notes
+            // there is no connect ??  connect is assumed if getKeyspace().get()
+            // how do we get the initial keyspace ?  used in the build statement above
+
+            // move this into the create function
+            //if (keyspaceProperty != null) {
+            //    newSession = newCluster.connect(keyspaceProperty.getValue());
+            //} else {
+            //    newSession = newCluster.connect();
+            //}
+            newSession = newCluster;
+            // need to work on consistency level
+            //newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
             Metadata metadata = newCluster.getMetadata();
             log.info("Connected to Cassandra cluster: {}", new Object[]{metadata.getClusterName()});
 
@@ -284,35 +334,38 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         return contactPoints;
     }
+    // commenting entire function, outter comments, to test
+    //private CqlSession createCluster(List<InetSocketAddress> contactPoints, SSLContext sslContext,
+    //                              String username, String password, String compressionType,
+    //                              Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional) {
+        // had issue here, lets test a simple server
+        //CqlSession.Builder builder = CqlSession.builder().addContactPoint(contactPoints);
+        // this still didnt work,  issue with "CqlSession.Builder builder"
+    //    CqlSession.builder builder = CqlSession.builder().addContactPoint(new InetSocketAddress("127.0.0.1",9042));
+       
+        //if (sslContext != null) {
+        //    JdkSSLOptions sslOptions = JdkSSLOptions.builder()
+        //            .withSSLContext(sslContext)
+        //            .build();
+        //    builder = builder.withSSL(sslOptions);
+        //}
 
-    private Cluster createCluster(List<InetSocketAddress> contactPoints, SSLContext sslContext,
-                                  String username, String password, String compressionType,
-                                  Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional) {
-        Cluster.Builder builder = Cluster.builder().addContactPointsWithPorts(contactPoints);
+    //    if (username != null && password != null) {
+    //        builder = builder.withCredentials(username, password);
+    //    }
 
-        if (sslContext != null) {
-            JdkSSLOptions sslOptions = JdkSSLOptions.builder()
-                    .withSSLContext(sslContext)
-                    .build();
-            builder = builder.withSSL(sslOptions);
-        }
+        //if(ProtocolOptions.Compression.SNAPPY.equals(compressionType)) {
+        //    builder = builder.withCompression(ProtocolOptions.Compression.SNAPPY);
+        //} else if(ProtocolOptions.Compression.LZ4.equals(compressionType)) {
+        //    builder = builder.withCompression(ProtocolOptions.Compression.LZ4);
+        //}
 
-        if (username != null && password != null) {
-            builder = builder.withCredentials(username, password);
-        }
+        //SocketOptions socketOptions = new SocketOptions();
+        //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
+        //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
 
-        if(ProtocolOptions.Compression.SNAPPY.equals(compressionType)) {
-            builder = builder.withCompression(ProtocolOptions.Compression.SNAPPY);
-        } else if(ProtocolOptions.Compression.LZ4.equals(compressionType)) {
-            builder = builder.withCompression(ProtocolOptions.Compression.LZ4);
-        }
+        //builder.withSocketOptions(socketOptions);
 
-        SocketOptions socketOptions = new SocketOptions();
-        readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
-        connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
-
-        builder.withSocketOptions(socketOptions);
-
-        return builder.build();
-    }
+    //    return builder.build();
+    //}
 }
