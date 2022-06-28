@@ -126,7 +126,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             .name("Consistency Level")
             .description("The strategy for how many replicas must respond before results are returned.")
             .required(true)
-            .allowableValues(ConsistencyLevel.values())
+            //.allowableValues(ConsistencyLevel.values())
             .defaultValue("ONE")
             .build();
 
