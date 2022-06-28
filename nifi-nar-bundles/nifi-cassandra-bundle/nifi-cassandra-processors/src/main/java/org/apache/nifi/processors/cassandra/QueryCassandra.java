@@ -17,11 +17,8 @@
 package org.apache.nifi.processors.cassandra;
 
 import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
-// cannot find this one
-// import com.datastax.oss.driver.api.core.DataType;
+import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-// cannot find this one
-//import com.datastax.oss.driver.api.core.cql.ResultSetFuture;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.NoNodeAvailableException;
