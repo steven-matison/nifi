@@ -28,19 +28,14 @@ package org.apache.nifi.service;
 
 // new imports
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
-import com.datastax.oss.driver.api.core.*; 
-
-// is the * import overkill here?   How do we even find the classes after api.core. ?
-// across the entire cassandra bundle are additional class paths that need to be resolved
-
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 // unsure of import paths or acceptable 4.x usage for 
+////  i believe these are now just configurable options in CqlSession ??
 //JdkSSLOptions
-//ConsistencyLevel
 //ProtocolOptions
 //SocketOptions
-
-
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -131,7 +126,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             .name("Consistency Level")
             .description("The strategy for how many replicas must respond before results are returned.")
             .required(true)
-            //.allowableValues(ConsistencyLevel.values())
+            .allowableValues(ConsistencyLevel.values())
             .defaultValue("ONE")
             .build();
 
@@ -231,6 +226,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         if (cluster == null) {
             ComponentLog log = getLogger();
             final String contactPointList = context.getProperty(CONTACT_POINTS).evaluateAttributeExpressions().getValue();
+            final String keySpace = context.getProperty(KEYSPACE).getValue();
             final String consistencyLevel = context.getProperty(CONSISTENCY_LEVEL).getValue();
             final String compressionType = context.getProperty(COMPRESSION_TYPE).getValue();
 
@@ -269,11 +265,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
                 .filter(PropertyValue::isSet)
                 .map(PropertyValue::asInteger);
 
-            // Create the cluster and connect to it
-            // moving build state out of function to get a basic working sample
-            // had issues with 
-            //     contact points
-            //     issue with "CqlSession.Builder builder"
+
 
             // the create function exists in following locations:
             //     nifi-cassandra-processors/src/main/java/org/apache/nifi/processors/cassandra/AbstractCassandraProcessor.java
@@ -283,27 +275,11 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             //     nifi-cassandra-bundle/nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/QueryCassandraTest.java
 
             // new final 4.x function will need exist in all locations
-                
-            //CqlSession newCluster = createCluster(contactPoints, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional);
-            PropertyValue keyspaceProperty = context.getProperty(KEYSPACE).evaluateAttributeExpressions();
 
-            CqlSession newCluster = CqlSession.builder()
-                .addContactPoint(new InetSocketAddress("127.0.0.1",9042)) // if i feed the
-                .withCredentials(username, password)
-                .withKeyspace(keyspaceProperty.getValue())
-                .build();
+            // Create the cluster and connect to it
+            CqlSession newCluster = createCluster(contactPoints, keySpace, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional);
 
             final CqlSession newSession;
-            // working notes
-            // there is no connect ??  connect is assumed if getKeyspace().get()
-            // how do we get the initial keyspace ?  used in the build statement above
-
-            // move this into the create function
-            //if (keyspaceProperty != null) {
-            //    newSession = newCluster.connect(keyspaceProperty.getValue());
-            //} else {
-            //    newSession = newCluster.connect();
-            //}
             newSession = newCluster;
             // need to work on consistency level
             //newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
@@ -334,15 +310,13 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         return contactPoints;
     }
-    // commenting entire function, outter comments, to test
-    //private CqlSession createCluster(List<InetSocketAddress> contactPoints, SSLContext sslContext,
-    //                              String username, String password, String compressionType,
-    //                              Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional) {
-        // had issue here, lets test a simple server
-        //CqlSession.Builder builder = CqlSession.builder().addContactPoint(contactPoints);
-        // this still didnt work,  issue with "CqlSession.Builder builder"
-    //    CqlSession.builder builder = CqlSession.builder().addContactPoint(new InetSocketAddress("127.0.0.1",9042));
-       
+
+    private CqlSession createCluster(List<InetSocketAddress> contactPoints, String keyspace, SSLContext sslContext,
+                                  String username, String password, String compressionType,
+                                  Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional) {
+
+        CqlSessionBuilder builder = CqlSession.builder().addContactPoint((InetSocketAddress) contactPoints);
+        builder = builder.withKeyspace(keyspace);
         //if (sslContext != null) {
         //    JdkSSLOptions sslOptions = JdkSSLOptions.builder()
         //            .withSSLContext(sslContext)
@@ -350,9 +324,9 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         //    builder = builder.withSSL(sslOptions);
         //}
 
-    //    if (username != null && password != null) {
-    //        builder = builder.withCredentials(username, password);
-    //    }
+        if (username != null && password != null) {
+            builder = builder.withCredentials(username, password);
+        }
 
         //if(ProtocolOptions.Compression.SNAPPY.equals(compressionType)) {
         //    builder = builder.withCompression(ProtocolOptions.Compression.SNAPPY);
@@ -366,6 +340,6 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         //builder.withSocketOptions(socketOptions);
 
-    //    return builder.build();
-    //}
+        return builder.build();
+    }
 }

@@ -16,18 +16,20 @@
  */
 package org.apache.nifi.processors.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.JdkSSLOptions;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.ProtocolOptions;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TypeCodec;
-import com.datastax.driver.core.exceptions.AuthenticationException;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
+// cannot find this one
+//import com.datastax.oss.driver.api.core.CodecRegistry;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.type.DataType
+//import com.datastax.driver.core.JdkSSLOptions;
+import com.datastax.oss.driver.api.core.metadata.Metadata;
+// cannot find this one
+//import com.datastax.driver.core.ProtocolOptions;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
+// cannot find this one
+//import com.datastax.driver.core.exceptions.AuthenticationException;
+import com.datastax.oss.driver.api.core.NoNodeAvailableException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
