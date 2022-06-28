@@ -22,10 +22,13 @@ import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.Statement;
 // cant find the querybuilder, this is right path per datastax sample
-import com.datastax.oss.driver.api.querybuilder.Assignment;
-import com.datastax.oss.driver.api.querybuilder.Insert;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
-import com.datastax.oss.driver.api.querybuilder.Update;
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder.*;
+// but it doesnt work
+// reference: https://docs.datastax.com/en/developer/java-driver/4.14/manual/query_builder/
+//import com.datastax.oss.driver.api.querybuilder.Assignment;
+//import com.datastax.oss.driver.api.querybuilder.Insert;
+//import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
+//import com.datastax.oss.driver.api.querybuilder.Update;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.ReadsAttribute;
