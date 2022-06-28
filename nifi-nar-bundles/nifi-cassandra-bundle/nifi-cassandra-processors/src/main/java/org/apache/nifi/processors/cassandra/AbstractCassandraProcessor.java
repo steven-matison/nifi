@@ -19,7 +19,7 @@ package org.apache.nifi.processors.cassandra;
 // cannot find this one
 //import com.datastax.oss.driver.api.core.CodecRegistry;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
-import com.datastax.oss.driver.api.core.type.DataType
+import com.datastax.oss.driver.api.core.type.DataType;
 //import com.datastax.driver.core.JdkSSLOptions;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 // cannot find this one
