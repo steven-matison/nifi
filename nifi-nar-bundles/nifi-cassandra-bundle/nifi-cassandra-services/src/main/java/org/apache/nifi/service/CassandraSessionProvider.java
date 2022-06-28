@@ -31,9 +31,13 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+//JdkSSLOptions not needed able to provide SSLContext directly to CqlSession
+// ssl import moved here:
+//import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
+
 // unsure of import paths or acceptable 4.x usage for 
 ////  i believe these are now just configurable options in CqlSession ??
-//JdkSSLOptions
+
 //ProtocolOptions
 //SocketOptions
 
@@ -317,12 +321,10 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         CqlSessionBuilder builder = CqlSession.builder().addContactPoint((InetSocketAddress) contactPoints);
         builder = builder.withKeyspace(keyspace);
-        //if (sslContext != null) {
-        //    JdkSSLOptions sslOptions = JdkSSLOptions.builder()
-        //            .withSSLContext(sslContext)
-        //            .build();
-        //    builder = builder.withSSL(sslOptions);
-        //}
+
+        if (sslContext != null) {
+            builder = builder.withSslContext(sslContext);
+        }
 
         if (username != null && password != null) {
             builder = builder.withCredentials(username, password);
