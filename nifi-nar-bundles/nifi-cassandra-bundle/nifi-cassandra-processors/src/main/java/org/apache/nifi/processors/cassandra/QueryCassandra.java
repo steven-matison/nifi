@@ -16,15 +16,19 @@
  */
 package org.apache.nifi.processors.cassandra;
 
-import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.QueryExecutionException;
-import com.datastax.driver.core.exceptions.QueryValidationException;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+// cannot find this one
+// import com.datastax.oss.driver.api.core.DataType;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+// cannot find this one
+//import com.datastax.oss.driver.api.core.cql.ResultSetFuture;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.NoNodeAvailableException;
+// cannot find this one
+//import com.datastax.oss.driver.api.core.QueryExecutionException;
+// cannot find this one
+//import com.datastax.oss.driver.api.core.QueryValidationException;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;

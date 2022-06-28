@@ -40,16 +40,18 @@
             <artifactId>nifi-properties</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-core</artifactId>
+            <groupId>com.datastax.oss</groupId>
+            <artifactId>java-driver-core</artifactId>
             <version>${cassandra.sdk.version}</version>
             <scope>provided</scope>
         </dependency>
+<!-- commented this dependency until needed
         <dependency>
-            <groupId>com.datastax.cassandra</groupId>
+            <groupId>com.datastax.oss</groupId>
             <artifactId>cassandra-driver-extras</artifactId>
             <version>${cassandra.sdk.version}</version>
         </dependency>
+-->
         <dependency>
             <groupId>org.apache.nifi</groupId>
             <artifactId>nifi-ssl-context-service-api</artifactId>
