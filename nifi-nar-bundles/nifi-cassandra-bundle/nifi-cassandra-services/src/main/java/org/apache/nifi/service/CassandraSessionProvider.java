@@ -30,7 +30,13 @@ package org.apache.nifi.service;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
-import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.config.OptionsMap;
+import com.datastax.oss.driver.api.core.config.TypedDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+
+// i do not think ConsistencyLevel is needed in session ??
+//import com.datastax.oss.driver.api.core.ConsistencyLevel;
+
 //JdkSSLOptions not needed able to provide SSLContext directly to CqlSession
 // ssl import moved here:
 //import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
@@ -208,6 +214,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
     // comment this
     // I am not sure if we still need to override and "cluster details"
     // since this doesnt exist in [] i believe its not needed here
+    //// can we get the same details from getMetadata ?? are they needed?
     //@Override
     // public CqlSession getCluster() {
     //    if (cluster != null) {
@@ -286,6 +293,8 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             final CqlSession newSession;
             newSession = newCluster;
             // need to work on consistency level
+            // new 4.x shows executing consistency level with the query statement, not the connection
+            // not sure if we can still set it per connection.
             //newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
             Metadata metadata = newCluster.getMetadata();
             log.info("Connected to Cassandra cluster: {}", new Object[]{metadata.getClusterName()});
@@ -325,22 +334,43 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         if (sslContext != null) {
             builder = builder.withSslContext(sslContext);
         }
-
+        // this needs work, including upgrades for secure bundle / auth
         if (username != null && password != null) {
             builder = builder.withCredentials(username, password);
         }
 
+        
         //if(ProtocolOptions.Compression.SNAPPY.equals(compressionType)) {
         //    builder = builder.withCompression(ProtocolOptions.Compression.SNAPPY);
         //} else if(ProtocolOptions.Compression.LZ4.equals(compressionType)) {
         //    builder = builder.withCompression(ProtocolOptions.Compression.LZ4);
         //}
 
+        // testing config per: https://docs.datastax.com/en/drivers/java/4.14/com/datastax/oss/driver/api/core/config/DriverConfigLoader.html#fromMap-com.datastax.oss.driver.api.core.config.OptionsMap-
+
+        // TypedDriverOption
+        // https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/config/TypedDriverOption.html
+        
+        // This creates a configuration equivalent to the built-in reference.conf:
+        OptionsMap map = OptionsMap.driverDefaults();
+
+        // Customize an option:
+        // example
+        //map.put(TypedDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(5)); 
+
+
         //SocketOptions socketOptions = new SocketOptions();
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
+        // trying to convert to options map
+        map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
-
+        // trying to convert to options map
+        map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
         //builder.withSocketOptions(socketOptions);
+
+        DriverConfigLoader loader = DriverConfigLoader.fromMap(map);
+        builder = builder.withConfigLoader(loader);
+            
 
         return builder.build();
     }
