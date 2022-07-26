@@ -288,7 +288,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             // new final 4.x function will need exist in all locations
 
             // Create the cluster and connect to it
-            CqlSession newCluster = createCluster(contactPoints, keySpace, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional);
+            CqlSession newCluster = createCluster(contactPoints, keySpace, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional, consistencyLevel);
 
             final CqlSession newSession;
             newSession = newCluster;
@@ -296,6 +296,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
             // new 4.x shows executing consistency level with the query statement, not the connection
             // not sure if we can still set it per connection.
             //newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
+            // i think this can go to options map as REQUEST_CONSISTENCY
             Metadata metadata = newCluster.getMetadata();
             log.info("Connected to Cassandra cluster: {}", new Object[]{metadata.getClusterName()});
 
@@ -326,7 +327,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
     private CqlSession createCluster(List<InetSocketAddress> contactPoints, String keyspace, SSLContext sslContext,
                                   String username, String password, String compressionType,
-                                  Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional) {
+                                  Optional<Integer> readTimeoutMillisOptional, Optional<Integer> connectTimeoutMillisOptional, String consistencyLevel) {
 
         CqlSessionBuilder builder = CqlSession.builder().addContactPoint((InetSocketAddress) contactPoints);
         builder = builder.withKeyspace(keyspace);
@@ -350,7 +351,7 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         // TypedDriverOption
         // https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/config/TypedDriverOption.html
-        
+
         // This creates a configuration equivalent to the built-in reference.conf:
         OptionsMap map = OptionsMap.driverDefaults();
 
@@ -358,14 +359,16 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         // example
         //map.put(TypedDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(5)); 
 
+        // test consistency level
+        map.put(TypedDriverOption.REQUEST_CONSISTENCY, consistencyLevel);
 
         //SocketOptions socketOptions = new SocketOptions();
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
         // trying to convert to options map
-        map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
+        ////map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
         // trying to convert to options map
-        map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
+        ////map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
         //builder.withSocketOptions(socketOptions);
 
         DriverConfigLoader loader = DriverConfigLoader.fromMap(map);
