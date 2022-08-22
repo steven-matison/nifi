@@ -365,10 +365,10 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         //SocketOptions socketOptions = new SocketOptions();
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
         // trying to convert to options map
-        ////map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
+        map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
         // trying to convert to options map
-        ////map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
+        map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
         //builder.withSocketOptions(socketOptions);
 
         DriverConfigLoader loader = DriverConfigLoader.fromMap(map);
