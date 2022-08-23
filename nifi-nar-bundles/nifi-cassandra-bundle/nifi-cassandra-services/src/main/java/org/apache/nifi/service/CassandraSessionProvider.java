@@ -317,12 +317,16 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
 
         // testing read timeout in map
-        map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
-
+        
+        if(readTimeoutMillisOptional.isPresent()) {
+            map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional.get());
+        }
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
 
         // testing connect timeout in map
-        map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
+        if(connectTimeoutMillisOptional.isPresent()) {
+            map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional.get());
+        }
 
         //builder.withSocketOptions(socketOptions);
 
