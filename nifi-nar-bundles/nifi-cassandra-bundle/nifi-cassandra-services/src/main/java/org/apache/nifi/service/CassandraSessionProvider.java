@@ -16,37 +16,12 @@
  */
 package org.apache.nifi.service;
 
-
-// old imports
-//import com.datastax.driver.core.Cluster;
-//import com.datastax.driver.core.ConsistencyLevel;
-//import com.datastax.driver.core.JdkSSLOptions;
-//import com.datastax.driver.core.Metadata;
-//import com.datastax.driver.core.ProtocolOptions;
-//import com.datastax.driver.core.Session;
-//import com.datastax.driver.core.SocketOptions;
-
-// new imports
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.config.OptionsMap;
 import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
-
-// i do not think ConsistencyLevel is needed in session ??
-//import com.datastax.oss.driver.api.core.ConsistencyLevel;
-
-//JdkSSLOptions not needed able to provide SSLContext directly to CqlSession
-// ssl import moved here:
-//import com.datastax.oss.driver.api.core.ssl.SslEngineFactory;
-
-// unsure of import paths or acceptable 4.x usage for 
-////  i believe these are now just configurable options in CqlSession ??
-
-//ProtocolOptions
-//SocketOptions
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -276,30 +251,13 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
                 .filter(PropertyValue::isSet)
                 .map(PropertyValue::asInteger);
 
-
-
-            // the create function exists in following locations:
-            //     nifi-cassandra-processors/src/main/java/org/apache/nifi/processors/cassandra/AbstractCassandraProcessor.java
-            //     nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/AbstractCassandraProcessorTest.java
-            //     nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/PutCassandraQLTest.java
-            //     nifi-cassandra-bundle/nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/PutCassandraRecordTest.java
-            //     nifi-cassandra-bundle/nifi-cassandra-processors/src/test/java/org/apache/nifi/processors/cassandra/QueryCassandraTest.java
-
-            // new final 4.x function will need exist in all locations
-
             // Create the cluster and connect to it
             CqlSession newCluster = createCluster(contactPoints, keySpace, sslContext, username, password, compressionType, readTimeoutMillisOptional, connectTimeoutMillisOptional, consistencyLevel);
 
             final CqlSession newSession;
             newSession = newCluster;
-            // need to work on consistency level
-            // new 4.x shows executing consistency level with the query statement, not the connection
-            // not sure if we can still set it per connection.
-            //newCluster.getConfiguration().getQueryOptions().setConsistencyLevel(ConsistencyLevel.valueOf(consistencyLevel));
-            // i think this can go to options map as REQUEST_CONSISTENCY
             Metadata metadata = newCluster.getMetadata();
             log.info("Connected to Cassandra cluster: {}", new Object[]{metadata.getClusterName()});
-
             cluster = newCluster;
             cassandraSession = newSession;
         }
@@ -335,46 +293,41 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         if (sslContext != null) {
             builder = builder.withSslContext(sslContext);
         }
-        // this needs work, including upgrades for secure bundle / auth
+        // this needs work, including upgrades for secure bundle / auth ?? 
         if (username != null && password != null) {
             builder = builder.withCredentials(username, password);
         }
 
-        
+        // create OptionsMap
+        OptionsMap map = OptionsMap.driverDefaults();
+
         //if(ProtocolOptions.Compression.SNAPPY.equals(compressionType)) {
         //    builder = builder.withCompression(ProtocolOptions.Compression.SNAPPY);
         //} else if(ProtocolOptions.Compression.LZ4.equals(compressionType)) {
         //    builder = builder.withCompression(ProtocolOptions.Compression.LZ4);
         //}
 
-        // testing config per: https://docs.datastax.com/en/drivers/java/4.14/com/datastax/oss/driver/api/core/config/DriverConfigLoader.html#fromMap-com.datastax.oss.driver.api.core.config.OptionsMap-
-
-        // TypedDriverOption
-        // https://docs.datastax.com/en/drivers/java/4.7/com/datastax/oss/driver/api/core/config/TypedDriverOption.html
-
-        // This creates a configuration equivalent to the built-in reference.conf:
-        OptionsMap map = OptionsMap.driverDefaults();
-
-        // Customize an option:
-        // example
-        //map.put(TypedDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(5)); 
-
-        // test consistency level
+        // test compression type in map
+        map.put(TypedDriverOption.COMPRESSION_TYPE, compressionType);
+        
+        // test consistency level in map
         map.put(TypedDriverOption.REQUEST_CONSISTENCY, consistencyLevel);
 
         //SocketOptions socketOptions = new SocketOptions();
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
-        // trying to convert to options map
+
+        // testing read timeout in map
         map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional);
+
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
-        // trying to convert to options map
+
+        // testing connect timeout in map
         map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional);
+
         //builder.withSocketOptions(socketOptions);
 
         DriverConfigLoader loader = DriverConfigLoader.fromMap(map);
         builder = builder.withConfigLoader(loader);
-            
-
         return builder.build();
     }
 }
