@@ -309,11 +309,10 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
 
         // test compression type in map
         //// not working no compression type??
-        ////map.put(TypedDriverOption.COMPRESSION_TYPE, compressionType);
+        map.put(TypedDriverOption.COMPRESSION_TYPE, compressionType);
         
         // test consistency level in map
-        //// not working 
-        ////map.put(TypedDriverOption.REQUEST_CONSISTENCY, consistencyLevel);
+        map.put(TypedDriverOption.REQUEST_CONSISTENCY, consistencyLevel);
 
         //SocketOptions socketOptions = new SocketOptions();
         //readTimeoutMillisOptional.ifPresent(socketOptions::setReadTimeoutMillis);
@@ -322,14 +321,14 @@ public class CassandraSessionProvider extends AbstractControllerService implemen
         
         if(readTimeoutMillisOptional.isPresent()) {
             //// not working value not excepted
-            ////map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional.get());
+            //map.put(TypedDriverOption.REQUEST_TIMEOUT, readTimeoutMillisOptional.get());
         }
         //connectTimeoutMillisOptional.ifPresent(socketOptions::setConnectTimeoutMillis);
 
         // testing connect timeout in map
         if(connectTimeoutMillisOptional.isPresent()) {
             //// not working value not excepted
-            ////map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional.get());
+            //map.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT,connectTimeoutMillisOptional.get());
         }
 
         //builder.withSocketOptions(socketOptions);
